@@ -195,8 +195,6 @@ export default {
     scrollToElement(e) {
       const el = this.$refs[e].$el;
 
-      console.log(el);
-
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
       }
