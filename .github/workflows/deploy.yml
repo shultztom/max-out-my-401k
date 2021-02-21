@@ -16,7 +16,7 @@
               node-version: '12'
           - name: Install Yarn
             run: npm i -g yarn
-          - name: Install Yarn
+          - name: Install Deps
             run: yarn install
           - name: Set Creds
             run: git config user.name "shultztom" && git config user.email "%EMAIL%"
