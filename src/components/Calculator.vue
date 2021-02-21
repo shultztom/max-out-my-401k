@@ -15,13 +15,14 @@
         >
       </v-col>
 
-      <v-col cols="8" v-show="this.maxContributionAmount">
+      <v-col cols="8" v-if="this.maxContributionAmount">
         <h3>
           You can contribute {{ formatMoney(maxContributionAmount) }} this year!
         </h3>
         <h3>How much will you make this year?</h3>
         <v-text-field
           ref="salary"
+          id="salary"
           v-model="salary"
           label="Salary"
           type="number"
@@ -32,8 +33,8 @@
         <v-btn color="primary" @click="determine401kAmount">Submit</v-btn>
       </v-col>
 
-      <v-col cols="8" v-show="this.contributionPercent">
-        <h3 v-if="this.contributionPercent === 100">
+      <v-col cols="8" v-if="this.showFinalView">
+        <h3 v-if="this.contributionPercent === 100" ref="badNewsHeader" id="badNewsHeader">
           Unfortunately, you cannot max out your 401k this year
         </h3>
         <div v-else>
@@ -41,7 +42,7 @@
             To max out your 401k, you must contribute
             <strong>{{ contributionPercent }}%</strong> of your salary!
           </h3>
-          <v-simple-table ref="payTable">
+          <v-simple-table ref="payTable" id="payTable">
             <template v-slot:default>
               <thead>
                 <tr>
@@ -82,6 +83,7 @@ export default {
     salary: null,
     contributionPercent: 0,
     rows: [],
+    showFinalView: false,
     snackbar: false,
     snackbarText: "",
   }),
@@ -113,7 +115,6 @@ export default {
         amount += 6500;
       }
       this.maxContributionAmount = amount;
-      this.scrollToElement("salary");
       this.$nextTick(() => this.$refs.salary.focus());
     },
     determine401kAmount() {
@@ -174,18 +175,13 @@ export default {
 
       this.rows = rows;
 
-      if (this.contributionPercent < 100) {
-        let field = document.createElement("input");
-        field.setAttribute("type", "text");
-        document.body.appendChild(field);
+      this.showFinalView = true;
 
-        setTimeout(function () {
-          field.focus();
-          setTimeout(function () {
-            field.setAttribute("style", "display:none;");
-          }, 50);
-        }, 50);
-        this.scrollToElement("payTable");
+      if (this.contributionPercent < 100) {
+        this.$nextTick(() => this.$refs.salary.blur());
+        this.$nextTick(() => this.scrollToElement("payTable"));
+      }else{
+        this.$nextTick(() => this.scrollToElement("badNewsHeader"));
       }
     },
     generateTableRow(dividend, rawContributionPercent) {
@@ -193,11 +189,8 @@ export default {
       return value;
     },
     scrollToElement(e) {
-      const el = this.$refs[e].$el;
-
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth" });
-      }
+      const el = this.$refs[e].$el.id;
+      this.$vuetify.goTo(`#${el}`)
     },
   },
 };
