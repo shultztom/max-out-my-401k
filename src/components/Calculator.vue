@@ -34,7 +34,11 @@
       </v-col>
 
       <v-col cols="8" v-if="this.showFinalView">
-        <h3 v-if="this.contributionPercent === 100" ref="badNewsHeader" id="badNewsHeader">
+        <h3
+          v-if="this.contributionPercent === 100"
+          ref="badNewsHeader"
+          id="badNewsHeader"
+        >
           Unfortunately, you cannot max out your 401k this year
         </h3>
         <div v-else>
@@ -48,12 +52,14 @@
                 <tr>
                   <th class="text-left">Pay Period</th>
                   <th class="text-left">Amount</th>
+                  <th class="text-left">Take Home (Before Taxes)</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="item in rows" :key="item.name">
                   <td>{{ item.name }}</td>
                   <td>{{ item.value }}</td>
+                  <td>{{ item.takeHomeAmount }}</td>
                 </tr>
               </tbody>
             </template>
@@ -166,8 +172,16 @@ export default {
       let rows = [];
       for (let p of payPeriods) {
         let value = this.generateTableRow(p.value, rawContributionPercent);
+        let takeHomeAmount = this.generateTakeHomeAmount(
+          p.value,
+          rawContributionPercent
+        );
         value = Number(Math.round(value + "e" + 2) + "e-" + 2);
+        takeHomeAmount = Number(
+          Math.round(takeHomeAmount + "e" + 2) + "e-" + 2
+        );
         rows.push({
+          takeHomeAmount: this.formatMoney(takeHomeAmount),
           value: this.formatMoney(value),
           name: p.name,
         });
@@ -180,17 +194,24 @@ export default {
       if (this.contributionPercent < 100) {
         this.$nextTick(() => this.$refs.salary.blur());
         this.$nextTick(() => this.scrollToElement("payTable"));
-      }else{
+      } else {
         this.$nextTick(() => this.scrollToElement("badNewsHeader"));
       }
     },
     generateTableRow(dividend, rawContributionPercent) {
-      let value = ((rawContributionPercent / 100) * this.salary) / dividend;
+      const value = ((rawContributionPercent / 100) * this.salary) / dividend;
+      return value;
+    },
+    generateTakeHomeAmount(dividend, rawContributionPercent) {
+      const takeHomeAmount = this.salary / dividend;
+      const deductionAmount =
+        ((rawContributionPercent / 100) * this.salary) / dividend;
+      let value = takeHomeAmount - deductionAmount;
       return value;
     },
     scrollToElement(e) {
       const el = this.$refs[e].$el.id;
-      this.$vuetify.goTo(`#${el}`)
+      this.$vuetify.goTo(`#${el}`);
     },
   },
 };
