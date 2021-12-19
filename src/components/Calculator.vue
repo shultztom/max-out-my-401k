@@ -44,7 +44,18 @@
         <div v-else>
           <h3>
             To max out your 401k, you must contribute
-            <strong>{{ contributionPercent }}%</strong> of your salary!
+            <strong>{{ contributionPercent }}% ({{roundedContributionPercent}}% 
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon
+                  v-bind="attrs"
+                  v-on="on">
+                    mdi-information-outline
+                  </v-icon>
+                </template>
+              <span>Rounded percent as most employers only allow whole numbers</span>
+              </v-tooltip>
+            )</strong> of your salary!
           </h3>
           <v-simple-table ref="payTable" id="payTable">
             <template v-slot:default>
@@ -88,6 +99,7 @@ export default {
     maxContributionAmount: 0,
     salary: null,
     contributionPercent: 0,
+    roundedContributionPercent: 0,
     rows: [],
     showFinalView: false,
     snackbar: false,
@@ -116,7 +128,7 @@ export default {
         return;
       }
 
-      let amount = 19500;
+      let amount = 20500;
       if (this.age >= 50) {
         amount += 6500;
       }
@@ -140,10 +152,17 @@ export default {
         Math.round(rawContributionPercent + "e" + 3) + "e-" + 3
       );
 
+      let roundedPercent = Math.ceil(rawContributionPercent);
+      let roundedContributionPercent = Number(
+        Math.round(roundedPercent + "e" + 3) + "e-" + 3
+      )
+
       if (contributionPercent >= 100) {
         this.contributionPercent = 100;
+        this.roundedContributionPercent = 100;
       } else {
         this.contributionPercent = contributionPercent;
+        this.roundedContributionPercent = roundedContributionPercent;
       }
 
       let payPeriods = [
@@ -171,18 +190,31 @@ export default {
 
       let rows = [];
       for (let p of payPeriods) {
+        let roundedPercent = Math.ceil(rawContributionPercent);
         let value = this.generateTableRow(p.value, rawContributionPercent);
+        let roundedValue = this.generateTableRow(p.value, roundedPercent);
+
         let takeHomeAmount = this.generateTakeHomeAmount(
           p.value,
           rawContributionPercent
         );
+
+        let roundedTakeHomeAmount = this.generateTakeHomeAmount(
+          p.value,
+          roundedPercent,
+        )
+
         value = Number(Math.round(value + "e" + 2) + "e-" + 2);
         takeHomeAmount = Number(
           Math.round(takeHomeAmount + "e" + 2) + "e-" + 2
         );
+        roundedValue = Number(Math.round(roundedValue + "e" + 2) + "e-" + 2);
+        roundedTakeHomeAmount = Number(
+          Math.round(roundedTakeHomeAmount + "e" + 2) + "e-" + 2
+        );
         rows.push({
-          takeHomeAmount: this.formatMoney(takeHomeAmount),
-          value: this.formatMoney(value),
+          takeHomeAmount: `${this.formatMoney(takeHomeAmount)}  (${this.formatMoney(roundedTakeHomeAmount)})`,
+          value: `${this.formatMoney(value)} (${this.formatMoney(roundedValue)})`,
           name: p.name,
         });
       }
