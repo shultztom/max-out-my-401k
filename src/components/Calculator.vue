@@ -28,12 +28,31 @@
           type="number"
           prefix="$"
           required
-          @change="determine401kAmount"
+          @change="checkBonus"
         ></v-text-field>
-        <v-btn color="primary" @click="determine401kAmount">Submit</v-btn>
+        <v-btn color="primary" @click="checkBonus">Next</v-btn>
       </v-col>
 
-      <v-col cols="8" v-if="this.showFinalView">
+      <v-col cols="8" v-if="this.showBonus">
+        <h3>Do you want to add money from a bonus?</h3>
+        <v-btn color="success" @click="enterBonus" class="mx-2">Yes</v-btn>
+        <v-btn color="error" @click="noBonus">No</v-btn>
+        <div v-if="this.contributeBonus">
+          <v-text-field
+            ref="bonus"
+            id="bonus"
+            v-model="bonus"
+            label="Bonus Amount"
+            type="number"
+            prefix="$"
+            required
+            @change="determine401kAmount"
+          ></v-text-field>
+          <v-btn color="primary" @click="determine401kAmount">Submit</v-btn>
+        </div>
+      </v-col>
+
+      <v-col cols="8" v-if="this.showFinalView && !this.tooMuchMoneyAdded">
         <h3
           v-if="this.contributionPercent === 100"
           ref="badNewsHeader"
@@ -44,18 +63,22 @@
         <div v-else>
           <h3>
             To max out your 401k, you must contribute
-            <strong>{{ contributionPercent }}% ({{roundedContributionPercent}}% 
+            <strong
+              >{{ contributionPercent }}% ({{ roundedContributionPercent }}%
               <v-tooltip bottom>
                 <template v-slot:activator="{ on, attrs }">
-                  <v-icon
-                  v-bind="attrs"
-                  v-on="on">
+                  <v-icon v-bind="attrs" v-on="on">
                     mdi-information-outline
                   </v-icon>
                 </template>
-              <span>Rounded percent as most employers only allow whole numbers</span>
+                <span
+                  >Rounded percent as most employers only allow whole
+                  numbers</span
+                >
               </v-tooltip>
-            )</strong> of your salary!
+              )</strong
+            >
+            of your salary!
           </h3>
           <v-simple-table ref="payTable" id="payTable">
             <template v-slot:default>
@@ -76,6 +99,13 @@
             </template>
           </v-simple-table>
         </div>
+      </v-col>
+
+      <v-col cols="8" v-if="this.tooMuchMoneyAdded">
+        <h3 ref="tooMuchMoneyAdded" id="tooMuchMoneyAdded">
+          Looks like your bonus covers your entire contribution amount! No need
+          to add more through your pay periods!
+        </h3>
       </v-col>
 
       <v-snackbar v-model="snackbar">
@@ -104,6 +134,9 @@ export default {
     showFinalView: false,
     snackbar: false,
     snackbarText: "",
+    showBonus: false,
+    contributeBonus: false,
+    bonus: null,
   }),
   methods: {
     showSnackbar(message) {
@@ -137,16 +170,30 @@ export default {
     },
     determine401kAmount() {
       this.snackbar = false;
+      this.tooMuchMoneyAdded = false;
 
       if (!this.salary) {
         this.showSnackbar("Please enter a Salary!");
         return;
       }
 
+      if (Number(this.bonus) > Number(this.salary) || this.bonus < 0) {
+        this.showSnackbar("Please enter a valid Bonus Amount!");
+        return;
+      }
+
+      let adjustedContributionAmount = 0;
+      if (this.contributeBonus) {
+        adjustedContributionAmount =
+          this.maxContributionAmount - Number(this.bonus);
+      } else {
+        adjustedContributionAmount = this.maxContributionAmount;
+      }
+      
       const contributionAmount = Number(this.salary);
 
       const rawContributionPercent =
-        (this.maxContributionAmount / contributionAmount) * 100;
+        (adjustedContributionAmount / contributionAmount) * 100;
 
       let contributionPercent = Number(
         Math.round(rawContributionPercent + "e" + 3) + "e-" + 3
@@ -155,11 +202,15 @@ export default {
       let roundedPercent = Math.ceil(rawContributionPercent);
       let roundedContributionPercent = Number(
         Math.round(roundedPercent + "e" + 3) + "e-" + 3
-      )
+      );
 
       if (contributionPercent >= 100) {
         this.contributionPercent = 100;
         this.roundedContributionPercent = 100;
+      } else if (contributionPercent < 0) {
+        this.contributionPercent = 0;
+        this.roundedContributionPercent = 0;
+        this.tooMuchMoneyAdded = true;
       } else {
         this.contributionPercent = contributionPercent;
         this.roundedContributionPercent = roundedContributionPercent;
@@ -201,8 +252,8 @@ export default {
 
         let roundedTakeHomeAmount = this.generateTakeHomeAmount(
           p.value,
-          roundedPercent,
-        )
+          roundedPercent
+        );
 
         value = Number(Math.round(value + "e" + 2) + "e-" + 2);
         takeHomeAmount = Number(
@@ -213,8 +264,12 @@ export default {
           Math.round(roundedTakeHomeAmount + "e" + 2) + "e-" + 2
         );
         rows.push({
-          takeHomeAmount: `${this.formatMoney(takeHomeAmount)}  (${this.formatMoney(roundedTakeHomeAmount)})`,
-          value: `${this.formatMoney(value)} (${this.formatMoney(roundedValue)})`,
+          takeHomeAmount: `${this.formatMoney(
+            takeHomeAmount
+          )}  (${this.formatMoney(roundedTakeHomeAmount)})`,
+          value: `${this.formatMoney(value)} (${this.formatMoney(
+            roundedValue
+          )})`,
           name: p.name,
         });
       }
@@ -244,6 +299,19 @@ export default {
     scrollToElement(e) {
       const el = this.$refs[e].$el.id;
       this.$vuetify.goTo(`#${el}`);
+    },
+    checkBonus() {
+      this.showBonus = true;
+    },
+    enterBonus() {
+      this.contributeBonus = true;
+      this.showFinalView = false;
+      this.$nextTick(() => this.$refs.bonus.focus());
+      this.$nextTick(() => this.scrollToElement("bonus"));
+    },
+    noBonus() {
+      this.contributeBonus = false;
+      this.determine401kAmount();
     },
   },
 };
