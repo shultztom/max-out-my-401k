@@ -161,9 +161,9 @@ export default {
         return;
       }
 
-      let amount = 20500;
+      let amount = 22500;
       if (this.age >= 50) {
-        amount += 6500;
+        amount += 7500;
       }
       this.maxContributionAmount = amount;
       this.$nextTick(() => this.$refs.salary.focus());
