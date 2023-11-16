@@ -6,7 +6,7 @@
       dark
     >
       <v-icon color="green darken-2">mdi-currency-usd</v-icon>
-      <v-toolbar-title>Max out my 401k! (for 2023)</v-toolbar-title>
+      <v-toolbar-title>Max out my 401k! (for 2024)</v-toolbar-title>
 
       <v-spacer></v-spacer>
 

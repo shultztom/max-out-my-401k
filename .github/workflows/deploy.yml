@@ -1,24 +1,24 @@
-  name: Deploy to Github Pages
-  env: # Or as an environment variable
-      EMAIL: ${{ secrets.EMAIL }}
-  on:
-    push:
-      branches:
-        - master
-  jobs:
-    gh-pages-deploy:
-      name: Deploying to Github Pages
-      runs-on: ubuntu-latest
-      steps:
-          - uses: actions/checkout@v2
-          - uses: actions/setup-node@v2
-            with:
-              node-version: '12'
-          - name: Install Yarn
-            run: npm i -g yarn
-          - name: Install Deps
-            run: yarn install
-          - name: Set Creds
-            run: git config user.name "shultztom" && git config user.email "%EMAIL%"
-          - name: Deploy
-            run: npm run deploy
+name: Deploy to Github Pages
+env: # Or as an environment variable
+  EMAIL: ${{ secrets.EMAIL }}
+on:
+  push:
+    branches:
+      - master
+jobs:
+  gh-pages-deploy:
+    name: Deploying to Github Pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - name: Install Yarn
+        run: npm i -g yarn
+      - name: Install Deps
+        run: yarn install
+      - name: Set Creds
+        run: git config user.name "shultztom" && git config user.email "%EMAIL%"
+      - name: Deploy
+        run: npm run deploy
