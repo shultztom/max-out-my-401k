@@ -161,7 +161,7 @@ export default {
         return;
       }
 
-      let amount = 22500;
+      let amount = 23000;
       if (this.age >= 50) {
         amount += 7500;
       }
